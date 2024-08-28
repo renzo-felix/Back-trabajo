@@ -1,0 +1,223 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Place {
+  id               Int                @id @default(autoincrement())
+  name             String
+  description      String?
+  schedule         String?
+  price            Float?
+  location         String
+  images           Json
+  category         String
+  createdOn        DateTime           @default(now())
+  updatedOn        DateTime           @updatedAt
+  events           EventPlaces[]
+  reviews          Review[]
+  followers        PlaceFollowers[]
+  collectibles     UserCollectibles[]
+  adventures       UserAdventures[]
+  artworks         Artwork[]
+  visits           UserVisits[]
+  routes           RoutePlace[]
+  visitCount       Int                @default(0)
+  avgVisitDuration Float? // In minutes
+  popularEvents    Json?
+  peakHours        Json?
+  demographics     Json?
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+model User {
+  id           Int                @id @default(autoincrement())
+  firstName    String
+  lastName     String?
+  username     String?
+  email        String             @unique
+  password     String
+  provider     String?
+  providerId   String?
+  profileImg   String?
+  country      String
+  deletedOn    DateTime?
+  createdOn    DateTime           @default(now())
+  isActive     Boolean            @default(true)
+  lastLogin    DateTime?
+  birthdate    DateTime?
+  role         Role               
+  premium      Boolean            @default(false)
+  followers    PlaceFollowers[]
+  collectibles UserCollectibles[]
+  adventures   UserAdventures[]
+  plans        UserPlans[]
+  visits       UserVisits[]
+}
+
+model Image {
+  id          Int       @id @default(autoincrement())
+  url         String
+  title       String?
+  description String?
+  createdOn   DateTime  @default(now())
+  deletedOn   DateTime?
+  credits     String?
+}
+
+model Event {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float?
+  city        String
+  eventType   String
+  category    String
+  status      String
+  contact     String?
+  socialMedia String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String
+  images      Json
+  createdOn   DateTime      @default(now())
+  updatedOn   DateTime      @updatedAt
+  places      EventPlaces[]
+}
+
+model Review {
+  id         Int       @id @default(autoincrement())
+  reviewDate DateTime  @default(now())
+  comment    String?
+  createdOn  DateTime  @default(now())
+  deletedOn  DateTime?
+  modifiedOn DateTime?
+  placeId    Int
+  place      Place     @relation(fields: [placeId], references: [id])
+  tags       Json?
+}
+
+model Artwork {
+  id              Int      @id @default(autoincrement())
+  title           String
+  description     String?
+  publicationDate DateTime
+  artworkType     String
+  dimensions      String?
+  mediumMaterial  String?
+  price           Float?
+  saleStatus      String?
+  images          Json
+  createdOn       DateTime @default(now())
+  placeId         Int
+  place           Place    @relation(fields: [placeId], references: [id])
+}
+
+model Plan {
+  id          Int         @id @default(autoincrement())
+  planName    String
+  description String?
+  price       Float
+  discount    Float?
+  users       UserPlans[]
+}
+
+model PlaceFollowers {
+  id      Int   @id @default(autoincrement())
+  userId  Int
+  placeId Int
+  user    User  @relation(fields: [userId], references: [id])
+  place   Place @relation(fields: [placeId], references: [id])
+
+  @@unique([userId, placeId])
+}
+
+model EventPlaces {
+  id      Int   @id @default(autoincrement())
+  eventId Int
+  placeId Int
+  event   Event @relation(fields: [eventId], references: [id])
+  place   Place @relation(fields: [placeId], references: [id])
+
+  @@unique([eventId, placeId])
+}
+
+model UserCollectibles {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  placeId     Int
+  collectedOn DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  place       Place    @relation(fields: [placeId], references: [id])
+
+  @@unique([userId, placeId])
+}
+
+model UserAdventures {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  placeId       Int
+  adventureDate DateTime  @default(now())
+  content       String?
+  isPublic      Boolean   @default(false)
+  images        Json?
+  createdOn     DateTime  @default(now())
+  modifiedOn    DateTime? @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  place         Place     @relation(fields: [placeId], references: [id])
+
+  @@unique([userId, placeId, adventureDate])
+}
+
+model UserPlans {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  planId       Int
+  subscribedOn DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+  plan         Plan     @relation(fields: [planId], references: [id])
+
+  @@unique([userId, planId])
+}
+
+model UserVisits {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  placeId   Int
+  visitDate DateTime @default(now())
+  duration  Float // In minutes
+  user      User     @relation(fields: [userId], references: [id])
+  place     Place    @relation(fields: [placeId], references: [id])
+
+  @@unique([userId, placeId, visitDate])
+}
+
+model Route {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  tags        Json?
+  createdOn   DateTime     @default(now())
+  updatedOn   DateTime     @updatedAt
+  routePlaces RoutePlace[]
+}
+
+model RoutePlace {
+  id            Int    @id @default(autoincrement())
+  routeId       Int
+  placeId       Int
+  order         Int
+  googleMapsUrl String
+  route         Route  @relation(fields: [routeId], references: [id])
+  place         Place  @relation(fields: [placeId], references: [id])
+
+  @@unique([routeId, placeId, order])
+}
